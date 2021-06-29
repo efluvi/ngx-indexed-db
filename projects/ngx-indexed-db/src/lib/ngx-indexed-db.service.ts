@@ -422,8 +422,9 @@ export class NgxIndexedDBService {
    * Returns the open cursor event
    * @param storeName The name of the store to have the entries deleted
    * @param keyRange The key range which the cursor should be open on
+   * @param direction sort direction
    */
-  openCursor(storeName: string, keyRange?: IDBKeyRange): Observable<Event> {
+  openCursor(storeName: string, keyRange?: IDBKeyRange, direction?: IDBCursorDirection ): Observable<Event> {
     return from(
       new Promise<Event>((resolve, reject) => {
         openDatabase(this.indexedDB, this.dbConfig.name, this.dbConfig.version)
@@ -431,8 +432,7 @@ export class NgxIndexedDBService {
             validateBeforeTransaction(db, storeName, reject);
             const transaction = createTransaction(db, optionsGenerator(DBMode.readonly, storeName, reject, resolve));
             const objectStore = transaction.objectStore(storeName);
-            const request = keyRange === undefined ? objectStore.openCursor() : objectStore.openCursor(keyRange);
-
+            const request = (keyRange === undefined && direction==undefined) ? objectStore.openCursor() : (keyRange  && direction==undefined)?objectStore.openCursor(keyRange):objectStore.openCursor(keyRange,direction);
             request.onsuccess = (event: Event) => {
               resolve(event);
             };
@@ -442,17 +442,21 @@ export class NgxIndexedDBService {
     );
   }
 
+
+
   /**
    * Open a cursor by index filter.
    * @param storeName The name of the store to query.
    * @param indexName The index name to filter.
    * @param keyRange The range value and criteria to apply on the index.
+   * @param direction sort direction
    */
   openCursorByIndex(
     storeName: string,
     indexName: string,
     keyRange: IDBKeyRange,
-    mode: DBMode = DBMode.readonly
+    mode: DBMode = DBMode.readonly, 
+    direction?: IDBCursorDirection 
   ): Observable<Event> {
     const obs = new Subject<Event>();
 
@@ -476,7 +480,7 @@ export class NgxIndexedDBService {
         );
         const objectStore = transaction.objectStore(storeName);
         const index = objectStore.index(indexName);
-        const request = index.openCursor(keyRange);
+        const request = direction==undefined?index.openCursor(keyRange):index.openCursor(keyRange,direction);
 
         request.onsuccess = (event: Event) => {
           obs.next(event);
