@@ -1,8 +1,8 @@
 {
-  "name": "ngx-indexed-db",
-  "author": "Charles Assunção",
+  "name": "bd-ngx-indexed-db",
+  "author": "bdhwan",
   "description": "Angular wrapper to IndexedDB database.",
-  "version": "9.1.2",
+  "version": "9.1.10",
   "license": "ISC",
   "private": false,
   "keywords": [

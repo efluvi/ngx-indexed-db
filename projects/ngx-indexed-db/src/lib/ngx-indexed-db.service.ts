@@ -297,7 +297,7 @@ export class NgxIndexedDBService {
    * @param value The new value for the entry
    * @param key The key of the entry to update
    */
-  updateByKey<T>(storeName: string, value: T, key: IDBValidKey): Observable<T> {
+  updateByKey<T>(storeName: string, value: T, key: any): Observable<T> {
     return from(
       new Promise<T>((resolve, reject) => {
         openDatabase(this.indexedDB, this.dbConfig.name, this.dbConfig.version)
@@ -305,14 +305,12 @@ export class NgxIndexedDBService {
             validateBeforeTransaction(db, storeName, reject);
             const transaction = createTransaction(db, optionsGenerator(DBMode.readwrite, storeName, reject, resolve));
             const objectStore = transaction.objectStore(storeName);
-
-            transaction.oncomplete = () => {
+            transaction.oncomplete = (result: any) => {
               this.getByKey(storeName, key).subscribe((newValue) => {
                 resolve(newValue as T);
               });
             };
-
-            objectStore.put(value, key);
+            objectStore.put(value);
           })
           .catch((reason) => reject(reason));
       })
@@ -424,7 +422,7 @@ export class NgxIndexedDBService {
    * @param keyRange The key range which the cursor should be open on
    * @param direction sort direction
    */
-  openCursor(storeName: string, keyRange?: IDBKeyRange, direction?: IDBCursorDirection ): Observable<Event> {
+  openCursor(storeName: string, keyRange?: IDBKeyRange, direction?: IDBCursorDirection): Observable<Event> {
     return from(
       new Promise<Event>((resolve, reject) => {
         openDatabase(this.indexedDB, this.dbConfig.name, this.dbConfig.version)
@@ -432,7 +430,12 @@ export class NgxIndexedDBService {
             validateBeforeTransaction(db, storeName, reject);
             const transaction = createTransaction(db, optionsGenerator(DBMode.readonly, storeName, reject, resolve));
             const objectStore = transaction.objectStore(storeName);
-            const request = (keyRange === undefined && direction==undefined) ? objectStore.openCursor() : (keyRange  && direction==undefined)?objectStore.openCursor(keyRange):objectStore.openCursor(keyRange,direction);
+            const request =
+              keyRange === undefined && direction == undefined
+                ? objectStore.openCursor()
+                : keyRange && direction == undefined
+                ? objectStore.openCursor(keyRange)
+                : objectStore.openCursor(keyRange, direction);
             request.onsuccess = (event: Event) => {
               resolve(event);
             };
@@ -441,8 +444,6 @@ export class NgxIndexedDBService {
       })
     );
   }
-
-
 
   /**
    * Open a cursor by index filter.
@@ -455,8 +456,8 @@ export class NgxIndexedDBService {
     storeName: string,
     indexName: string,
     keyRange: IDBKeyRange,
-    mode: DBMode = DBMode.readonly, 
-    direction?: IDBCursorDirection 
+    mode: DBMode = DBMode.readonly,
+    direction?: IDBCursorDirection
   ): Observable<Event> {
     const obs = new Subject<Event>();
 
@@ -480,7 +481,7 @@ export class NgxIndexedDBService {
         );
         const objectStore = transaction.objectStore(storeName);
         const index = objectStore.index(indexName);
-        const request = direction==undefined?index.openCursor(keyRange):index.openCursor(keyRange,direction);
+        const request = direction == undefined ? index.openCursor(keyRange) : index.openCursor(keyRange, direction);
 
         request.onsuccess = (event: Event) => {
           obs.next(event);
